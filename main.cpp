@@ -3,6 +3,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include "ipfilter.h"
+#include <limits>
 
 // ("",  '.') -> [""]
 // ("11", '.') -> ["11"]
@@ -14,8 +16,10 @@ std::vector<std::string> split(const std::string &str, char d)
 {
     std::vector<std::string> r;
 
-    std::string::size_type start = 0;
-    std::string::size_type stop = str.find_first_of(d);
+    //std::string::size_type start = 0;
+    //std::string::size_type stop = str.find_first_of(d);
+    auto stop = str.find_first_of(d);
+    decltype(stop) start = 0;
     while(stop != std::string::npos)
     {
         r.push_back(str.substr(start, stop - start));
@@ -28,9 +32,27 @@ std::vector<std::string> split(const std::string &str, char d)
 
     return r;
 }
-
+using namespace std::string_literals;
 int main(int argc, char const *argv[])
 {
+    ipfilter::IPFilter ipFilter;
+
+    ipFilter.addAddress("185.46.86.131"s);
+    ipFilter.addAddress("46.223.254.56"s);
+    ipFilter.addAddress("68.46.218.208"s);
+    ipFilter.addAddress("185.46.86.131"s);
+    ipFilter.addAddress("186.46.222.194"s);
+    ipFilter.addAddress("185.38.85.204"s);
+    ipFilter.addAddress("46.223.254.56"s);
+    ipFilter.addAddress("20.251.197.23"s);
+    ipFilter.addAddress("185.46.86.132"s);
+    ipFilter.addAddress("186.204.34.46"s);
+    ipFilter.addAddress("185.46.85.78"s);
+    ipFilter.addAddress("185.50.86.22"s);
+    ipFilter.addAddress("185.46.87.231"s);
+
+    auto filterAddresses = ipFilter.filter_any(46);
+
     try
     {
         std::vector<std::vector<std::string>> ip_pool;

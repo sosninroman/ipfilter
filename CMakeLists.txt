@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.2)
 
 project(ip_filter VERSION 0.0.$ENV{TRAVIS_BUILD_NUMBER})
 
-file(GLOB_RECURSE IPFILTER_H
-        "${PROJECT_SOURCE_DIR}//*.h"
+file(GLOB IPFILTER_H
+        "${PROJECT_SOURCE_DIR}/*.h"
         )
 
 file(GLOB IPFILTER_SRC
@@ -22,6 +22,10 @@ set_target_properties(ip_filter PROPERTIES
 
 install(TARGETS ip_filter RUNTIME DESTINATION bin)
 
+add_subdirectory("${PROJECT_SOURCE_DIR}/extern/googletest")
+
+add_subdirectory(./test)
+
 set(CPACK_GENERATOR DEB)
 
 set(CPACK_PACKAGE_VERSION_MAJOR "${PROJECT_VERSION_MAJOR}")
@@ -31,3 +35,7 @@ set(CPACK_PACKAGE_VERSION_PATCH "${PROJECT_VERSION_PATCH}")
 set(CPACK_PACKAGE_CONTACT sosninroman92@gmail.com)
 
 include (CPack)
+
+enable_testing()
+
+add_test(NAME test_cli COMMAND test_cli)
