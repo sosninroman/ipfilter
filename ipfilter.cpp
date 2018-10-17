@@ -46,14 +46,11 @@ IPFilter::AddressesVectorType IPFilter::addresses() const
     AddressesVectorType result;
     result.reserve(m_addresses.size() );
 
-    //for(const auto& addressPair : m_addresses)
     for(auto itr = m_addresses.rbegin(); itr != m_addresses.rend(); ++itr)
     {
         decltype(IPAddressPairType::second) count = 0;
-        //while(count < addressPair.second)
         while(count < itr->second)
         {
-            //result.emplace_back(addressPair.first.address() );
             result.emplace_back(itr->first.address() );
             ++count;
         }
@@ -65,7 +62,6 @@ IPFilter::AddressesVectorType IPFilter::addresses() const
 IPFilter::AddressesVectorType IPFilter::filter_any(unsigned short value)
 {
     AddressesVectorType result;
-    //std::for_each(m_addresses.begin(), m_addresses.end(),
     std::for_each(m_addresses.rbegin(), m_addresses.rend(),
                   [&result, value](const auto& address){
         if(address.first.first() == value || address.first.second() == value ||
@@ -78,7 +74,6 @@ IPFilter::AddressesVectorType IPFilter::filter_any(unsigned short value)
                 ++count;
             }
         }
-//            result.emplace_back(address.first.address() );
     });
     return result;
 }

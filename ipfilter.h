@@ -36,14 +36,8 @@ bool operator<(const IPAddress& lhs, const IPAddress& rhs);
 class IPFilter
 {
     using AddressesVectorType = std::vector<std::string>;
-    using LessPredicateType = std::function<bool(const IPAddress&, const IPAddress&)>;
-    using IPAddressPairType = std::map<IPAddress, unsigned int, LessPredicateType>::value_type;
+    using IPAddressPairType = std::map<IPAddress, unsigned int>::value_type;
 public:
-//    IPFilter():
-//        m_addresses([](const IPAddress& lhs, const IPAddress& rhs)->bool{
-//        return rhs < lhs;})
-//    {}
-
     void addAddress(const std::string& str);
     AddressesVectorType addresses() const;
     AddressesVectorType filter_any(unsigned short value);
@@ -52,7 +46,6 @@ public:
 
     auto size() const {return m_size;}
 private:
-    //std::map<IPAddress, unsigned int, LessPredicateType> m_addresses; //{адрес, количество}
     std::map<IPAddress, unsigned int> m_addresses; //{адрес, количество}
     unsigned int m_size = 0; //размер
 };
