@@ -15,21 +15,21 @@ IPAddress::IPAddress(std::string ip):
     while (std::getline(ipStream, byteValue, '.') )
     {
         assert(position >= 0 && position < 4);
-        m_ipParts[position++] = std::stoi(byteValue);
+        m_bytes[position++] = std::stoi(byteValue);
     }
 }
 
 bool operator<(const IPAddress& lhs, const IPAddress& rhs)
 {
-    if(lhs.first() < rhs.first() )
+    if(lhs.firstByte() < rhs.firstByte() )
         return true;
-    else if(lhs.first() == rhs.first() && lhs.second() < rhs.second() )
+    else if(lhs.firstByte() == rhs.firstByte() && lhs.secondByte() < rhs.secondByte() )
         return true;
-    else if(lhs.first() == rhs.first() && lhs.second() == rhs.second() &&
-            lhs.third() < rhs.third() )
+    else if(lhs.firstByte() == rhs.firstByte() && lhs.secondByte() == rhs.secondByte() &&
+            lhs.thirdByte() < rhs.thirdByte() )
         return true;
-    else if(lhs.first() == rhs.first() && lhs.second() == rhs.second() &&
-            lhs.third() == rhs.third() && lhs.fourth() < rhs.fourth() )
+    else if(lhs.firstByte() == rhs.firstByte() && lhs.secondByte() == rhs.secondByte() &&
+            lhs.thirdByte() == rhs.thirdByte() && lhs.fourthByte() < rhs.fourthByte() )
         return true;
     return false;
 }
@@ -41,9 +41,9 @@ void IPFilter::addAddress(const std::string& str)
     ++m_size;
 }
 
-IPFilter::AddressesVectorType IPFilter::addresses() const
+IPFilter::AddressVectorType IPFilter::addresses() const
 {
-    AddressesVectorType result;
+    AddressVectorType result;
     result.reserve(m_addresses.size() );
 
     for(auto itr = m_addresses.rbegin(); itr != m_addresses.rend(); ++itr)
@@ -59,22 +59,72 @@ IPFilter::AddressesVectorType IPFilter::addresses() const
     return result;
 }
 
-IPFilter::AddressesVectorType IPFilter::filter_any(unsigned short value)
+IPFilter::AddressVectorType IPFilter::filter_any(unsigned short value)
 {
-    AddressesVectorType result;
-    std::for_each(m_addresses.rbegin(), m_addresses.rend(),
-                  [&result, value](const auto& address){
-        if(address.first.first() == value || address.first.second() == value ||
-                address.first.third() == value || address.first.fourth() == value)
+    AddressVectorType result;
+    std::for_each(m_addresses.crbegin(), m_addresses.crend(),
+                  [&result, value](const auto& addressPair){
+        if(addressPair.first.firstByte() == value || addressPair.first.secondByte() == value ||
+                addressPair.first.thirdByte() == value || addressPair.first.fourthByte() == value)
         {
             decltype(IPAddressPairType::second) count = 0;
-            while(count < address.second)
+            while(count < addressPair.second)
             {
-                result.emplace_back(address.first.address() );
+                result.emplace_back(addressPair.first.address() );
                 ++count;
             }
         }
     });
+    return result;
+}
+
+IPFilter::AddressVectorType IPFilter::filter(unsigned short firstByteFilter)
+{
+    const auto filterPrefix = std::to_string(firstByteFilter);
+
+    auto minAddress = IPAddress(filterPrefix + std::string(".0.0.0") );
+    auto maxAddress = IPAddress(filterPrefix + std::string(".255.255.255") );
+
+    return filter(minAddress, maxAddress);
+}
+
+IPFilter::AddressVectorType IPFilter::filter(unsigned short firstByteFilter, unsigned short secondByteFilter)
+{
+
+    const auto filterPrefix =
+            std::to_string(firstByteFilter).append({'.'}).append(std::to_string(secondByteFilter) );
+
+    auto minAddress = IPAddress(filterPrefix + std::string(".0.0") );
+    auto maxAddress = IPAddress(filterPrefix + std::string(".255.255") );
+
+    return filter(minAddress, maxAddress);
+}
+
+IPFilter::AddressVectorType IPFilter::filter(const IPAddress& minAddress, const IPAddress& maxAddress)
+{
+    AddressVectorType result;
+
+    if(maxAddress < minAddress)
+        return result;
+
+    auto litr = m_addresses.lower_bound(minAddress);
+    auto ritr = m_addresses.upper_bound(maxAddress);
+
+    if(litr != ritr)
+    {
+        --ritr;
+        --litr;
+        while(ritr != litr)
+        {
+            decltype(IPAddressPairType::second) count = 0;
+            while(count < ritr->second)
+            {
+                result.emplace_back(ritr->first.address() );
+                ++count;
+            }
+            --ritr;
+        }
+    }
     return result;
 }
 
