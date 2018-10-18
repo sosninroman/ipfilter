@@ -5,7 +5,7 @@
 #include "ipfilter.h"
 #include "split.h"
 
-int main(int argc, char const *argv[])
+int main()
 {
     try
     {

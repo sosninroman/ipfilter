@@ -12,11 +12,11 @@ file(GLOB IPFILTER_SRC
 		
 add_executable(ip_filter ${IPFILTER_SRC} ${IPFILTER_H} )
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 14)
 
 set_target_properties(ip_filter PROPERTIES
   CXX_STANDARD_REQUIRED ON
-  CXX_STANDARD 17
+  CXX_STANDARD 14
   COMPILE_OPTIONS "-Wpedantic;-Wall;-Wextra"
 )
 
