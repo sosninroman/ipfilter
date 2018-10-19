@@ -22,7 +22,14 @@ set_target_properties(ip_filter PROPERTIES
 
 install(TARGETS ip_filter RUNTIME DESTINATION bin)
 
+macro(install)
+endmacro()
+
 add_subdirectory("${PROJECT_SOURCE_DIR}/extern/googletest")
+
+macro(install)
+    _install(${ARGN})
+endmacro()
 
 add_subdirectory(./test)
 
