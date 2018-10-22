@@ -6,11 +6,10 @@
 namespace ipfilter
 {
 
-IPAddress::IPAddress(std::string ip):
-    m_ipStr(std::move(ip) )
+IPAddress::IPAddress(std::string ip)
 {
     std::string byteValue;
-    std::istringstream ipStream(m_ipStr);
+    std::istringstream ipStream(ip);
     auto position = 0;
     while (std::getline(ipStream, byteValue, '.') )
     {
@@ -19,19 +18,17 @@ IPAddress::IPAddress(std::string ip):
     }
 }
 
+std::string IPAddress::address() const
+{
+    return std::to_string(static_cast<int>(m_bytes[0])) + '.' +
+            std::to_string(static_cast<int>(m_bytes[1])) + '.' +
+            std::to_string(static_cast<int>(m_bytes[2])) + '.' +
+            std::to_string(static_cast<int>(m_bytes[3]));
+}
+
 bool operator<(const IPAddress& lhs, const IPAddress& rhs)
 {
-    if(lhs.firstByte() < rhs.firstByte() )
-        return true;
-    else if(lhs.firstByte() == rhs.firstByte() && lhs.secondByte() < rhs.secondByte() )
-        return true;
-    else if(lhs.firstByte() == rhs.firstByte() && lhs.secondByte() == rhs.secondByte() &&
-            lhs.thirdByte() < rhs.thirdByte() )
-        return true;
-    else if(lhs.firstByte() == rhs.firstByte() && lhs.secondByte() == rhs.secondByte() &&
-            lhs.thirdByte() == rhs.thirdByte() && lhs.fourthByte() < rhs.fourthByte() )
-        return true;
-    return false;
+    return lhs.m_bytes < rhs.m_bytes;
 }
 
 void IPFilter::addAddress(const std::string& str)
@@ -59,13 +56,13 @@ IPFilter::AddressVectorType IPFilter::addresses() const
     return result;
 }
 
-IPFilter::AddressVectorType IPFilter::filter_any(unsigned short value)
+IPFilter::AddressVectorType IPFilter::filter_any(unsigned char value)
 {
     AddressVectorType result;
     std::for_each(m_addresses.crbegin(), m_addresses.crend(),
                   [&result, value](const auto& addressPair){
-        if(addressPair.first.firstByte() == value || addressPair.first.secondByte() == value ||
-                addressPair.first.thirdByte() == value || addressPair.first.fourthByte() == value)
+        if(addressPair.first.m_bytes[0] == value || addressPair.first.m_bytes[1] == value ||
+                addressPair.first.m_bytes[2] == value || addressPair.first.m_bytes[3] == value)
         {
             decltype(IPAddressPairType::second) count = 0;
             while(count < addressPair.second)
@@ -78,29 +75,7 @@ IPFilter::AddressVectorType IPFilter::filter_any(unsigned short value)
     return result;
 }
 
-IPFilter::AddressVectorType IPFilter::filter(unsigned short firstByteFilter)
-{
-    const auto filterPrefix = std::to_string(firstByteFilter);
-
-    auto minAddress = IPAddress(filterPrefix + std::string(".0.0.0") );
-    auto maxAddress = IPAddress(filterPrefix + std::string(".255.255.255") );
-
-    return filter(minAddress, maxAddress);
-}
-
-IPFilter::AddressVectorType IPFilter::filter(unsigned short firstByteFilter, unsigned short secondByteFilter)
-{
-
-    const auto filterPrefix =
-            std::to_string(firstByteFilter).append({'.'}).append(std::to_string(secondByteFilter) );
-
-    auto minAddress = IPAddress(filterPrefix + std::string(".0.0") );
-    auto maxAddress = IPAddress(filterPrefix + std::string(".255.255") );
-
-    return filter(minAddress, maxAddress);
-}
-
-IPFilter::AddressVectorType IPFilter::filter(const IPAddress& minAddress, const IPAddress& maxAddress)
+IPFilter::AddressVectorType IPFilter::filterByAddresses(const IPAddress& minAddress, const IPAddress& maxAddress)
 {
     AddressVectorType result;
 

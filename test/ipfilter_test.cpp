@@ -4,30 +4,19 @@
 
 TEST(IP_ADDRESS_TEST, constructors_tests)
 {
-    const std::string ip("12.113.555.127");
+    const std::string ip("12.113.200.127");
 
     //ctor
     ipfilter::IPAddress address(ip);
     ASSERT_EQ(address.address(), ip);
-    ASSERT_EQ(address.firstByte(), 12);
-    ASSERT_EQ(address.secondByte(), 113);
-    ASSERT_EQ(address.thirdByte(), 555);
-    ASSERT_EQ(address.fourthByte(), 127);
 
     //copy ctor
     ipfilter::IPAddress address2(address);
-    ASSERT_EQ(address.firstByte(), address2.firstByte() );
-    ASSERT_EQ(address.secondByte(), address2.secondByte() );
-    ASSERT_EQ(address.thirdByte(), address2.thirdByte() );
-    ASSERT_EQ(address.fourthByte(), address2.fourthByte() );
+    ASSERT_EQ(address.address(), address2.address() );
 
     //move ctor
     ipfilter::IPAddress address3(std::move(address) );
     ASSERT_EQ(address3.address(), ip);
-    ASSERT_EQ(address3.firstByte(), 12);
-    ASSERT_EQ(address3.secondByte(), 113);
-    ASSERT_EQ(address3.thirdByte(), 555);
-    ASSERT_EQ(address3.fourthByte(), 127);
 
     //exceptions
     ASSERT_THROW(ipfilter::IPAddress("aa.aa.aa.aa"), std::invalid_argument);
@@ -36,9 +25,9 @@ TEST(IP_ADDRESS_TEST, constructors_tests)
 
 TEST(IP_ADDRESS_TEST, operator_less_test)
 {
-    const std::string ip1("12.113.555.127");
-    const std::string ip2("13.113.555.127");
-    const std::string ip3("13.114.555.127");
+    const std::string ip1("12.113.200.127");
+    const std::string ip2("13.113.200.127");
+    const std::string ip3("13.114.200.127");
     const std::string ip4("13.114.556.127");
     const std::string ip5("13.114.556.128");
 
@@ -200,6 +189,94 @@ TEST(IP_FILTER_TEST, filter_by_first_second_byte_test)
     ASSERT_TRUE(emptyFilteredVector2.empty() );
 }
 
+TEST(IP_FILTER_TEST, filter_by_first_second_third_byte_test)
+{
+    ipfilter::IPFilter ipFilter;
+
+    ipFilter.addAddress("185.46.86.131");
+    ipFilter.addAddress("46.223.254.56");
+    ipFilter.addAddress("68.46.218.208");
+    ipFilter.addAddress("185.46.86.131");
+    ipFilter.addAddress("186.46.222.194");
+    ipFilter.addAddress("185.38.85.204");
+    ipFilter.addAddress("46.223.254.56");
+    ipFilter.addAddress("20.251.197.23");
+    ipFilter.addAddress("185.46.86.132");
+    ipFilter.addAddress("186.204.34.46");
+    ipFilter.addAddress("185.46.85.78");
+    ipFilter.addAddress("185.50.86.22");
+    ipFilter.addAddress("185.46.87.231");
+
+    //
+    const auto filteredVector = ipFilter.filter(185, 46, 86);
+
+    ASSERT_EQ(filteredVector.size(), 3);
+    ASSERT_EQ(filteredVector[0], "185.46.86.132");
+    ASSERT_EQ(filteredVector[1], "185.46.86.131");
+    ASSERT_EQ(filteredVector[2], "185.46.86.131");
+
+    //
+    const auto emptyFilteredVector1 = ipFilter.filter(1, 46, 54);
+    ASSERT_TRUE(emptyFilteredVector1.empty() );
+
+    const auto emptyFilteredVector2 = ipFilter.filter(185, 2, 54);
+    ASSERT_TRUE(emptyFilteredVector2.empty() );
+
+    const auto emptyFilteredVector3 = ipFilter.filter(18, 23, 23);
+    ASSERT_TRUE(emptyFilteredVector3.empty() );
+}
+
+TEST(IP_FILTER_TEST, filter_by_first_second_third_fourth_byte_test)
+{
+    ipfilter::IPFilter ipFilter;
+
+    ipFilter.addAddress("185.46.86.131");
+    ipFilter.addAddress("46.223.254.56");
+    ipFilter.addAddress("68.46.218.208");
+    ipFilter.addAddress("185.46.86.131");
+    ipFilter.addAddress("186.46.222.194");
+    ipFilter.addAddress("185.38.85.204");
+    ipFilter.addAddress("46.223.254.56");
+    ipFilter.addAddress("20.251.197.23");
+    ipFilter.addAddress("185.46.86.132");
+    ipFilter.addAddress("186.204.34.46");
+    ipFilter.addAddress("185.46.85.78");
+    ipFilter.addAddress("185.50.86.22");
+    ipFilter.addAddress("185.46.87.231");
+
+    //
+    const auto filteredVector = ipFilter.filter(185, 46, 86, 131);
+
+    ASSERT_EQ(filteredVector.size(), 2);
+    ASSERT_EQ(filteredVector[0], "185.46.86.131");
+    ASSERT_EQ(filteredVector[1], "185.46.86.131");
+
+    //
+    const auto emptyFilteredVector1 = ipFilter.filter(1, 46, 54, 44);
+    ASSERT_TRUE(emptyFilteredVector1.empty() );
+
+
+    const auto filteredVector2 = ipFilter.filter(185, 46, 86, 132);
+
+    ASSERT_EQ(filteredVector2.size(), 1);
+    ASSERT_EQ(filteredVector2[0], "185.46.86.132");
+}
+
+//В случае пустого фильтра будет возвращен пустой вектор
+TEST(IP_FILTER_TEST, empty_filter_test)
+{
+    ipfilter::IPFilter ipFilter;
+
+    ipFilter.addAddress("185.46.86.131");
+    ipFilter.addAddress("46.223.254.56");
+    ipFilter.addAddress("68.46.218.208");
+    ipFilter.addAddress("185.46.86.131");
+    ipFilter.addAddress("186.46.222.194");
+
+    const auto result = ipFilter.filter();
+    ASSERT_TRUE(result.empty() );
+}
+
 TEST(IP_FILTER_TEST, filter_by_range_test)
 {
     ipfilter::IPFilter ipFilter;
@@ -228,10 +305,10 @@ TEST(IP_FILTER_TEST, filter_by_range_test)
     ASSERT_EQ(sortAddresses[7], "46.223.254.56");
     ASSERT_EQ(sortAddresses[8], "46.223.254.56");
 
-    auto v1 = ipFilter.filter(ipfilter::IPAddress("127.0.0.1"), ipfilter::IPAddress("127.0.0.2") );
+    auto v1 = ipFilter.filterByAddresses(ipfilter::IPAddress("127.0.0.1"), ipfilter::IPAddress("127.0.0.2") );
     ASSERT_TRUE(v1.empty() );
 
-    auto v2 = ipFilter.filter(ipfilter::IPAddress("1.0.0.0"), ipfilter::IPAddress("200.0.0.0") );
+    auto v2 = ipFilter.filterByAddresses(ipfilter::IPAddress("1.0.0.0"), ipfilter::IPAddress("200.0.0.0") );
     ASSERT_EQ(v2.size(), ipFilter.size() );
     ASSERT_EQ(v2[0], "192.1.56.98");
     ASSERT_EQ(v2[1], "186.46.222.194");
@@ -243,19 +320,19 @@ TEST(IP_FILTER_TEST, filter_by_range_test)
     ASSERT_EQ(v2[7], "46.223.254.56");
     ASSERT_EQ(v2[8], "46.223.254.56");
 
-    auto v3 = ipFilter.filter(ipfilter::IPAddress("68.46.13.5"), ipfilter::IPAddress("68.46.13.5") );
+    auto v3 = ipFilter.filterByAddresses(ipfilter::IPAddress("68.46.13.5"), ipfilter::IPAddress("68.46.13.5") );
     ASSERT_EQ(v3.size(), 1);
     ASSERT_EQ(v3[0], "68.46.13.5");
 
-    auto v4 = ipFilter.filter(ipfilter::IPAddress("192.0.0.1"), ipfilter::IPAddress("127.0.0.2") );
+    auto v4 = ipFilter.filterByAddresses(ipfilter::IPAddress("192.0.0.1"), ipfilter::IPAddress("127.0.0.2") );
     ASSERT_TRUE(v4.empty() );
 
-    auto v5 = ipFilter.filter(ipfilter::IPAddress("185.0.0.0"), ipfilter::IPAddress("185.255.255.255") );
+    auto v5 = ipFilter.filterByAddresses(ipfilter::IPAddress("185.0.0.0"), ipfilter::IPAddress("185.255.255.255") );
     ASSERT_EQ(v5.size(), 2);
     ASSERT_EQ(v5[0], "185.46.86.131");
     ASSERT_EQ(v5[1], "185.46.86.131");
 
-    auto v6 = ipFilter.filter(ipfilter::IPAddress("58.1.1.1"), ipfilter::IPAddress("185.46.86.131") );
+    auto v6 = ipFilter.filterByAddresses(ipfilter::IPAddress("58.1.1.1"), ipfilter::IPAddress("185.46.86.131") );
     ASSERT_EQ(v6.size(), 5);
     ASSERT_EQ(v6[0], "185.46.86.131");
     ASSERT_EQ(v6[1], "185.46.86.131");
