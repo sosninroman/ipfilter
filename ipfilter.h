@@ -16,6 +16,7 @@ class IPFilter;
 class IPAddress
 {
 public:
+    IPAddress() = default;
     //throw std::invalid_argument, std::out_of_range
     explicit IPAddress(std::string ip);
 
@@ -81,11 +82,11 @@ IPFilter::AddressVectorType IPFilter::_filter(std::array<unsigned char, MaskSize
 template<size_t MaskSize>
 IPFilter::AddressVectorType IPFilter::_filter(std::array<unsigned char, MaskSize>& addressMask)
 {
-    std::string minAddress;
-    std::string maxAddress;
+    IPAddress minAddress;
+    IPAddress maxAddress;
     std::tie(minAddress, maxAddress) = getAddresses(addressMask);
 
-    return filterByAddresses(IPAddress(minAddress), IPAddress(maxAddress) );
+    return filterByAddresses(minAddress, maxAddress);
 }
 
 template<size_t MaskSize>
@@ -93,17 +94,19 @@ auto IPFilter::getAddresses(const std::array<unsigned char, MaskSize>& addressMa
 {
     std::string minAddress;
     std::string maxAddress;
+
     for(decltype(MaskSize) i = 0; i < MaskSize; ++i)
     {
         minAddress += std::to_string(addressMask[i]) + ((i == 3) ? "" : ".");
         maxAddress += std::to_string(addressMask[i]) + ((i == 3) ? "" : ".");
     }
+
     for(decltype(MaskSize) i = 0; i < 4 - MaskSize; ++i)
     {
         minAddress.append("0").append( i == 3 ? "" : ".");
         maxAddress.append("255").append(i == 3 ? "" : ".");
     }
-    return std::make_tuple(minAddress, maxAddress);
+    return std::make_tuple(IPAddress(minAddress), IPAddress(maxAddress) );
 }
 
 }
