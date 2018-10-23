@@ -16,7 +16,7 @@ class IPFilter;
 class IPAddress
 {
 public:
-    IPAddress() = default;
+    IPAddress():m_bytes({0,0,0,0}){}
     //throw std::invalid_argument, std::out_of_range
     explicit IPAddress(std::string ip);
 
@@ -92,20 +92,20 @@ IPFilter::AddressVectorType IPFilter::_filter(std::array<unsigned char, MaskSize
 template<size_t MaskSize>
 auto IPFilter::getAddresses(const std::array<unsigned char, MaskSize>& addressMask)
 {
-    std::string minAddress;
-    std::string maxAddress;
+    IPAddress minAddress;
+    IPAddress maxAddress;
 
     for(decltype(MaskSize) i = 0; i < MaskSize; ++i)
     {
-        minAddress += std::to_string(addressMask[i]) + ((i == 3) ? "" : ".");
-        maxAddress += std::to_string(addressMask[i]) + ((i == 3) ? "" : ".");
+        minAddress.m_bytes[i] = addressMask[i];
+        maxAddress.m_bytes[i] = addressMask[i];
     }
 
-    for(decltype(MaskSize) i = 0; i < 4 - MaskSize; ++i)
+    for(decltype(MaskSize) i = 3; i > MaskSize - 1; --i)
     {
-        minAddress.append("0").append( i == 3 ? "" : ".");
-        maxAddress.append("255").append(i == 3 ? "" : ".");
+        maxAddress.m_bytes[i] = 255;
     }
+
     return std::make_tuple(IPAddress(minAddress), IPAddress(maxAddress) );
 }
 

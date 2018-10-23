@@ -7,25 +7,6 @@
 
 int main()
 {
-    ipfilter::IPFilter ipFilter;
-
-    ipFilter.addAddress("185.46.86.131");
-    ipFilter.addAddress("46.223.254.56");
-    ipFilter.addAddress("68.46.218.208");
-    ipFilter.addAddress("185.46.86.131");
-    ipFilter.addAddress("186.46.222.194");
-    ipFilter.addAddress("185.38.85.204");
-    ipFilter.addAddress("46.223.254.56");
-    ipFilter.addAddress("20.251.197.23");
-    ipFilter.addAddress("185.46.86.132");
-    ipFilter.addAddress("186.204.34.46");
-    ipFilter.addAddress("185.46.85.78");
-    ipFilter.addAddress("185.50.86.22");
-    ipFilter.addAddress("185.46.87.231");
-
-    //
-    const auto filteredVector = ipFilter.filter(185);
-
     try
     {
         ipfilter::IPFilter ipFilter;
