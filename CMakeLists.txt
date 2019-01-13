@@ -1,29 +1,29 @@
 cmake_minimum_required(VERSION 3.2)
 
-project(ip_filter VERSION 0.0.$ENV{TRAVIS_BUILD_NUMBER})
+project(range VERSION 0.0.$ENV{TRAVIS_BUILD_NUMBER})
 
 include(${PROJECT_SOURCE_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
 
-file(GLOB IPFILTER_H
+file(GLOB RANGE_H
         "${PROJECT_SOURCE_DIR}/*.h"
         )
 
-file(GLOB IPFILTER_SRC
+file(GLOB RANGE_SRC
         "${PROJECT_SOURCE_DIR}/*.cpp"
         )
 		
-add_executable(ip_filter ${IPFILTER_SRC} ${IPFILTER_H} )
+add_executable(range ${RANGE_SRC} ${RANGE_H} )
 
 set(CMAKE_CXX_STANDARD 14)
 
-set_target_properties(ip_filter PROPERTIES
+set_target_properties(range PROPERTIES
   CXX_STANDARD_REQUIRED ON
   CXX_STANDARD 14
   COMPILE_OPTIONS "-Wpedantic;-Wall;-Wextra"
 )
 
-install(TARGETS ip_filter RUNTIME DESTINATION bin)
+install(TARGETS range RUNTIME DESTINATION bin)
 
 macro(install)
 endmacro()
