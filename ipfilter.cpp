@@ -70,13 +70,9 @@ void IPFilter::addAddress(const std::string& str)
 IPFilter::AddressVectorType IPFilter::addresses() const
 {
     AddressVectorType result;
-    //result.reserve(m_addresses.size() );
 
     internal::addressesRange rng(&m_addresses);
     result.reserve(rng.size() );
-//    ranges::for_each(rng, [&result](const std::pair<IPAddress, unsigned int>& pair){
-//            result.push_back(pair.first.address());
-//        });
     ranges::for_each(rng, [&result](const IPAddress& addr){
             result.push_back(addr.address());
         });
@@ -88,22 +84,16 @@ IPFilter::AddressVectorType IPFilter::filter_any(unsigned char value)
 {
     AddressVectorType result;
 
-//    ranges::for_each(internal::addressesRange(&m_addresses) |
-//                     ranges::view::filter([value](const std::pair<IPAddress,unsigned int>& addressPair)
-//    {
-//        return addressPair.first.m_bytes[0] == value || addressPair.first.m_bytes[1] == value ||
-//                addressPair.first.m_bytes[2] == value || addressPair.first.m_bytes[3] == value;
-//    }), [&result](const std::pair<IPAddress,unsigned int>& addressPair){
-//        result.push_back(addressPair.first.address());
-//    });
-    ranges::for_each(internal::addressesRange(&m_addresses) |
-                     ranges::view::filter([value](const IPAddress& addr)
-    {
-        return addr.m_bytes[0] == value || addr.m_bytes[1] == value ||
-                addr.m_bytes[2] == value || addr.m_bytes[3] == value;
-    }), [&result](const IPAddress& addr){
-        result.push_back(addr.address() );
-    });
+    ranges::for_each(
+                internal::addressesRange(&m_addresses) |
+                ranges::view::filter(
+                    [value](const IPAddress& addr)
+                    {
+                        return addr.m_bytes[0] == value || addr.m_bytes[1] == value ||
+                                addr.m_bytes[2] == value || addr.m_bytes[3] == value;
+                    }),
+    [&result](const IPAddress& addr){result.push_back(addr.address() );}
+    );
 
     return result;
 }
@@ -117,26 +107,16 @@ IPFilter::AddressVectorType IPFilter::filterByAddresses(const IPAddress& minAddr
 
     auto ritr = m_addresses.upper_bound(maxAddress);
 
-    internal::addressesRange rng(&m_addresses);
-
-//    ranges::for_each(rng | ranges::view::filter(
-//                         [minAddr = minAddress, ritr, allFromLeftBound = (ritr == m_addresses.end())]
-//                         (const std::pair<const IPAddress, unsigned int>& val)
-//    {
-//        return (allFromLeftBound || val.first < ritr->first) && !(val.first < minAddr);
-//    }), [&result](const std::pair<const IPAddress, unsigned int>& val)
-//    {
-//        result.emplace_back(val.first.address() );
-//    });
-    ranges::for_each(rng | ranges::view::filter(
-                         [minAddr = minAddress, ritr, allFromLeftBound = (ritr == m_addresses.end())]
+    ranges::for_each(
+                internal::addressesRange(&m_addresses) |
+                ranges::view::filter(
+                         [minAddr = minAddress, ritr, allFromRightSide = (ritr == m_addresses.end() )]
                          (const IPAddress& addr)
-    {
-        return (allFromLeftBound || addr < ritr->first) && !(addr < minAddr);
-    }), [&result](const IPAddress& addr)
-    {
-        result.emplace_back(addr.address() );
-    });
+                        {
+                            return (allFromRightSide || addr < ritr->first) && !(addr < minAddr);
+                        }),
+    [&result](const IPAddress& addr){result.emplace_back(addr.address() );}
+    );
 
     return result;
 }

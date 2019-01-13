@@ -33,6 +33,8 @@ private:
 namespace internal
 {
 
+//Интервал для контейнера, содержащего добаленные ip-адреса.
+//Обеспечивает проход по контейнеру с учетом дубликатов адресов.
 class addressesRange
         : public ranges::view_facade<addressesRange>
 {
