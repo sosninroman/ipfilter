@@ -6,6 +6,35 @@
 namespace ipfilter
 {
 
+namespace internal
+{
+
+void addressesRange::next()
+{
+    assert(m_currentIterator != m_addressesMap->crend() );
+    if(m_counter < m_currentIterator->second-1)
+    {
+        ++m_counter;
+    }
+    else
+    {
+        ++m_currentIterator;
+        m_counter = 0;
+    }
+}
+
+std::size_t addressesRange::size()
+{
+    size_t result = m_addressesMap->size();
+
+    ranges::for_each(*m_addressesMap,
+                  [&result](const std::pair<const IPAddress,unsigned int>& val){result += val.second-1;});
+
+    return result;
+}
+
+}//internal
+
 IPAddress::IPAddress(std::string ip)
 {
     std::string byteValue;
@@ -41,17 +70,16 @@ void IPFilter::addAddress(const std::string& str)
 IPFilter::AddressVectorType IPFilter::addresses() const
 {
     AddressVectorType result;
-    result.reserve(m_addresses.size() );
+    //result.reserve(m_addresses.size() );
 
-    for(auto itr = m_addresses.rbegin(); itr != m_addresses.rend(); ++itr)
-    {
-        decltype(IPAddressPairType::second) count = 0;
-        while(count < itr->second)
-        {
-            result.emplace_back(itr->first.address() );
-            ++count;
-        }
-    }
+    internal::addressesRange rng(&m_addresses);
+    result.reserve(rng.size() );
+//    ranges::for_each(rng, [&result](const std::pair<IPAddress, unsigned int>& pair){
+//            result.push_back(pair.first.address());
+//        });
+    ranges::for_each(rng, [&result](const IPAddress& addr){
+            result.push_back(addr.address());
+        });
 
     return result;
 }
@@ -59,19 +87,24 @@ IPFilter::AddressVectorType IPFilter::addresses() const
 IPFilter::AddressVectorType IPFilter::filter_any(unsigned char value)
 {
     AddressVectorType result;
-    std::for_each(m_addresses.crbegin(), m_addresses.crend(),
-                  [&result, value](const auto& addressPair){
-        if(addressPair.first.m_bytes[0] == value || addressPair.first.m_bytes[1] == value ||
-                addressPair.first.m_bytes[2] == value || addressPair.first.m_bytes[3] == value)
-        {
-            decltype(IPAddressPairType::second) count = 0;
-            while(count < addressPair.second)
-            {
-                result.emplace_back(addressPair.first.address() );
-                ++count;
-            }
-        }
+
+//    ranges::for_each(internal::addressesRange(&m_addresses) |
+//                     ranges::view::filter([value](const std::pair<IPAddress,unsigned int>& addressPair)
+//    {
+//        return addressPair.first.m_bytes[0] == value || addressPair.first.m_bytes[1] == value ||
+//                addressPair.first.m_bytes[2] == value || addressPair.first.m_bytes[3] == value;
+//    }), [&result](const std::pair<IPAddress,unsigned int>& addressPair){
+//        result.push_back(addressPair.first.address());
+//    });
+    ranges::for_each(internal::addressesRange(&m_addresses) |
+                     ranges::view::filter([value](const IPAddress& addr)
+    {
+        return addr.m_bytes[0] == value || addr.m_bytes[1] == value ||
+                addr.m_bytes[2] == value || addr.m_bytes[3] == value;
+    }), [&result](const IPAddress& addr){
+        result.push_back(addr.address() );
     });
+
     return result;
 }
 
@@ -82,24 +115,29 @@ IPFilter::AddressVectorType IPFilter::filterByAddresses(const IPAddress& minAddr
     if(maxAddress < minAddress)
         return result;
 
-    auto litr = m_addresses.lower_bound(minAddress);
     auto ritr = m_addresses.upper_bound(maxAddress);
 
-    if(litr != ritr)
+    internal::addressesRange rng(&m_addresses);
+
+//    ranges::for_each(rng | ranges::view::filter(
+//                         [minAddr = minAddress, ritr, allFromLeftBound = (ritr == m_addresses.end())]
+//                         (const std::pair<const IPAddress, unsigned int>& val)
+//    {
+//        return (allFromLeftBound || val.first < ritr->first) && !(val.first < minAddr);
+//    }), [&result](const std::pair<const IPAddress, unsigned int>& val)
+//    {
+//        result.emplace_back(val.first.address() );
+//    });
+    ranges::for_each(rng | ranges::view::filter(
+                         [minAddr = minAddress, ritr, allFromLeftBound = (ritr == m_addresses.end())]
+                         (const IPAddress& addr)
     {
-        --ritr;
-        --litr;
-        while(ritr != litr)
-        {
-            decltype(IPAddressPairType::second) count = 0;
-            while(count < ritr->second)
-            {
-                result.emplace_back(ritr->first.address() );
-                ++count;
-            }
-            --ritr;
-        }
-    }
+        return (allFromLeftBound || addr < ritr->first) && !(addr < minAddr);
+    }), [&result](const IPAddress& addr)
+    {
+        result.emplace_back(addr.address() );
+    });
+
     return result;
 }
 

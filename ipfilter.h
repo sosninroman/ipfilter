@@ -7,6 +7,8 @@
 #include <array>
 #include <functional>
 #include <type_traits>
+#include <range/v3/all.hpp>
+#include <cassert>
 
 namespace ipfilter
 {
@@ -27,6 +29,33 @@ public:
 private:
     std::array<unsigned char, 4> m_bytes;
 };
+
+namespace internal
+{
+
+class addressesRange
+        : public ranges::view_facade<addressesRange>
+{
+    friend class ranges::range_access;
+    const std::map<IPAddress, unsigned int>* m_addressesMap;
+    size_t m_counter = 0;
+    std::map<IPAddress, unsigned int>::const_reverse_iterator m_currentIterator;
+
+    const auto& read() const { return m_currentIterator->first; }
+    bool equal(ranges::default_sentinel) const { return m_currentIterator == m_addressesMap->crend(); }
+    void next();
+public:
+    addressesRange() = default;
+    explicit addressesRange(const std::map<IPAddress, unsigned int> *addresses):
+        m_addressesMap(addresses)
+    {
+        assert(addresses != nullptr);
+        m_currentIterator = m_addressesMap->crbegin();
+    }
+    std::size_t size();
+};
+
+}//internal
 
 class IPFilter
 {
